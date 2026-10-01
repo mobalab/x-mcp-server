@@ -6,11 +6,27 @@
   "bin": {
     "x-mcp-server": "./build/index.js"
   },
+  "files": [
+    "build/**/*.js"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mobalab/x-mcp-server.git"
+  },
+  "homepage": "https://github.com/mobalab/x-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/mobalab/x-mcp-server/issues"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "start": "node build/index.js",
     "dev": "tsc -w"
   },

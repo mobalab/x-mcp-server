@@ -5,6 +5,7 @@ package-lock.json
 # Build output
 build/
 dist/
+*.tgz
 
 # Environment variables and secrets
 .env

@@ -38,12 +38,32 @@ This fork is maintained at [mobalab/x-mcp-server](https://github.com/mobalab/x-m
 
 ## Installation
 
+### Run with npx
+
+Once this fork has been published to npm, run:
+
 ```bash
-git clone https://github.com/DataWhisker/x-mcp-server.git
-cd x-mcp-server
-npm install
-npm run build
+npx -y @mobalab/x-mcp-server
 ```
+
+`npx` downloads the package and runs its command without a global install.
+`-y` accepts the installation prompt, which is needed when an MCP client launches
+the server. Configure the X credentials described below in your MCP client or
+shell environment. The server communicates over standard input/output; it does
+not open a browser or show an interactive prompt.
+
+For a specific release, use `npx -y @mobalab/x-mcp-server@2.0.0`.
+
+### Build from source
+
+```bash
+git clone https://github.com/mobalab/x-mcp-server.git
+cd x-mcp-server
+npm ci
+npm start
+```
+
+`npm ci` installs the locked dependencies and automatically builds the server.
 
 ## Authentication
 
@@ -94,14 +114,15 @@ Tokens are auto-refreshed and persisted to `~/.x-mcp-tokens.json`.
 
 ## Claude Desktop Configuration
 
-Add to `%APPDATA%/Claude/claude_desktop_config.json`:
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` on
+macOS or `%APPDATA%/Claude/claude_desktop_config.json` on Windows:
 
 ```json
 {
   "mcpServers": {
     "x": {
-      "command": "node",
-      "args": ["C:/path/to/x-mcp-server/build/index.js"],
+      "command": "npx",
+      "args": ["-y", "@mobalab/x-mcp-server@2.0.0"],
       "env": {
         "TWITTER_API_KEY": "your-api-key",
         "TWITTER_API_SECRET": "your-api-secret",
@@ -113,6 +134,10 @@ Add to `%APPDATA%/Claude/claude_desktop_config.json`:
   }
 }
 ```
+
+This configuration requires the package to be published first. Restart Claude
+Desktop after saving it. For a local source build, use `"command": "node"` and
+`"args": ["/absolute/path/to/x-mcp-server/build/index.js"]` instead.
 
 ### Optional Xquik Search Backend
 
@@ -197,10 +222,57 @@ X API client. Set:
 ## Development
 
 ```bash
+npm ci           # Install locked dependencies and build
 npm run build    # Compile TypeScript
 npm run dev      # Watch mode
 npm start        # Run the server
 ```
+
+## Publishing this fork to npm
+
+The npm **package** is named `@mobalab/x-mcp-server`; the executable **command**
+inside it is named `x-mcp-server`. The `@mobalab` scope belongs to your npm
+organization. Your npm user must have permission to publish packages in that
+organization.
+
+For the first release, run these commands from this repository:
+
+```bash
+npm ci
+npm pack --dry-run
+npm login
+npm whoami
+npm publish --access public
+```
+
+`npm pack --dry-run` previews the files that will be uploaded. The package
+includes compiled JavaScript, `package.json`, the README, and the MIT license.
+The `prepare` script builds automatically before packing or publishing, so users
+running the npm package do not need TypeScript or a local build.
+
+`npm login` signs your CLI into your npmjs.com account. Follow npm's login and
+verification prompts. Direct publishing requires account two-factor
+authentication (2FA), or a granular access token with bypass 2FA enabled; see
+[npm's publishing guide](https://docs.npmjs.com/creating-and-publishing-scoped-public-packages/).
+`--access public` makes this scoped package publicly available.
+
+After publishing, you can run it from any directory:
+
+```bash
+npx -y @mobalab/x-mcp-server@2.0.0
+```
+
+Each published version is unique and cannot be overwritten. For subsequent
+bug-fix releases, start with a clean, committed working tree and run:
+
+```bash
+npm version patch
+npm publish --access public
+```
+
+`npm version patch` increments the version (for example, `2.0.0` to `2.0.1`),
+updates the lockfile, and creates a Git commit and tag. Update any MCP client
+configuration that pins a version when you want to use the new release.
 
 ## Project Structure
 
