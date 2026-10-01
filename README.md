@@ -2,6 +2,8 @@
 
 A Model Context Protocol (MCP) server for X (Twitter) integration. Provides 26 tools for reading timelines, posting, searching, engagement (likes, retweets, bookmarks), user lookup, follower export, mentions, likes, articles, and lists. Designed for use with Claude desktop and other MCP-compatible clients.
 
+This fork is maintained at [mobalab/x-mcp-server](https://github.com/mobalab/x-mcp-server) and published as `@mobalab/x-mcp-server`. The original project is [DataWhisker/x-mcp-server](https://github.com/DataWhisker/x-mcp-server).
+
 <a href="https://glama.ai/mcp/servers/5nx3qqiunw"><img width="380" height="200" src="https://glama.ai/mcp/servers/5nx3qqiunw/badge" alt="X Server MCP server" /></a>
 
 ## Features
