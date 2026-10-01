@@ -20,7 +20,7 @@ This fork is maintained at [mobalab/x-mcp-server](https://github.com/mobalab/x-m
 
 ## Prerequisites
 
-- Node.js >= 18.0.0
+- Node.js >= 20.0.0 (use a currently supported LTS release)
 - X (Twitter) Developer Account
 - Claude desktop app (or any MCP-compatible client)
 
