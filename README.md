@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server for X (Twitter) integration. Provides 26 t
 
 This fork is maintained at [mobalab/x-mcp-server](https://github.com/mobalab/x-mcp-server) and published as `@mobalab/x-mcp-server`. The original project is [DataWhisker/x-mcp-server](https://github.com/DataWhisker/x-mcp-server).
 
-<a href="https://glama.ai/mcp/servers/5nx3qqiunw"><img width="380" height="200" src="https://glama.ai/mcp/servers/5nx3qqiunw/badge" alt="X Server MCP server" /></a>
+[![Run on Bloque](https://bloque.run/run-on-bloque.svg)](https://bloque.run/add?name=X&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2JhbGFiL3gtbWNwLXNlcnZlciJdLCJlbnYiOnsiVFdJVFRFUl9BUElfS0VZIjoiIiwiVFdJVFRFUl9BUElfU0VDUkVUIjoiIiwiVFdJVFRFUl9BQ0NFU1NfVE9LRU4iOiIiLCJUV0lUVEVSX0FDQ0VTU19TRUNSRVQiOiIifX0%3D)
 
 ## Features
 
