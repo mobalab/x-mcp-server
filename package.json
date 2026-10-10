@@ -1,6 +1,6 @@
 {
   "name": "@mobalab/x-mcp-server",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "main": "build/index.js",
   "bin": {
@@ -30,7 +30,12 @@
     "start": "node build/index.js",
     "dev": "tsc -w"
   },
-  "keywords": ["mcp", "twitter", "x", "api-v2"],
+  "keywords": [
+    "mcp",
+    "twitter",
+    "x",
+    "api-v2"
+  ],
   "author": "",
   "license": "MIT",
   "description": "Fork of x-mcp-server for X (Twitter) integration — v2 API with OAuth 2.0 media upload",
