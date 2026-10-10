@@ -40,7 +40,7 @@ This fork is maintained at [mobalab/x-mcp-server](https://github.com/mobalab/x-m
 
 ### Run with npx
 
-Once this fork has been published to npm, run:
+Run:
 
 ```bash
 npx -y @mobalab/x-mcp-server
@@ -135,8 +135,7 @@ macOS or `%APPDATA%/Claude/claude_desktop_config.json` on Windows:
 }
 ```
 
-This configuration requires the package to be published first. Restart Claude
-Desktop after saving it. For a local source build, use `"command": "node"` and
+Restart Claude Desktop after saving it. For a local source build, use `"command": "node"` and
 `"args": ["/absolute/path/to/x-mcp-server/build/index.js"]` instead.
 
 ### Optional Xquik Search Backend
@@ -228,14 +227,14 @@ npm run dev      # Watch mode
 npm start        # Run the server
 ```
 
-## Publishing this fork to npm
+## Publishing to npm (maintainers)
 
 The npm **package** is named `@mobalab/x-mcp-server`; the executable **command**
 inside it is named `x-mcp-server`. The `@mobalab` scope belongs to your npm
 organization. Your npm user must have permission to publish packages in that
 organization.
 
-For the first release, run these commands from this repository:
+To publish a release, run these commands from this repository:
 
 ```bash
 npm ci
