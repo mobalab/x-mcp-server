@@ -122,7 +122,7 @@ macOS or `%APPDATA%/Claude/claude_desktop_config.json` on Windows:
   "mcpServers": {
     "x": {
       "command": "npx",
-      "args": ["-y", "@mobalab/x-mcp-server@2.0.0"],
+      "args": ["-y", "@mobalab/x-mcp-server"],
       "env": {
         "TWITTER_API_KEY": "your-api-key",
         "TWITTER_API_SECRET": "your-api-secret",
@@ -258,7 +258,7 @@ authentication (2FA), or a granular access token with bypass 2FA enabled; see
 After publishing, you can run it from any directory:
 
 ```bash
-npx -y @mobalab/x-mcp-server@2.0.0
+npx -y @mobalab/x-mcp-server
 ```
 
 Each published version is unique and cannot be overwritten. For subsequent
