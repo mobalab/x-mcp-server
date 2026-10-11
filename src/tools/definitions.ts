@@ -62,8 +62,8 @@ export const TOOL_DEFINITIONS: Tool[] = [
       properties: {
         text: {
           type: 'string',
-          description: 'The text content of the post (max 280 characters)',
-          maxLength: 280,
+          description: 'The text content of the post (max 280 characters, or 25,000 for X Premium accounts)',
+          maxLength: 25000,
         },
         image_path: {
           type: 'string',
@@ -89,8 +89,8 @@ export const TOOL_DEFINITIONS: Tool[] = [
         },
         text: {
           type: 'string',
-          description: 'The text content of the reply (max 280 characters)',
-          maxLength: 280,
+          description: 'The text content of the reply (max 280 characters, or 25,000 for X Premium accounts)',
+          maxLength: 25000,
         },
         image_path: {
           type: 'string',
@@ -116,8 +116,8 @@ export const TOOL_DEFINITIONS: Tool[] = [
         },
         text: {
           type: 'string',
-          description: 'Your commentary text (max 280 characters)',
-          maxLength: 280,
+          description: 'Your commentary text (max 280 characters, or 25,000 for X Premium accounts)',
+          maxLength: 25000,
         },
       },
       required: ['tweet_id', 'text'],
