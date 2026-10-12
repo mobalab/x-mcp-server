@@ -241,6 +241,11 @@ export const TOOL_DEFINITIONS: Tool[] = [
 
   // --- Users ---
   {
+    name: 'get_me',
+    description: 'Read fresh authenticated identity and versioned publisher field-request policy; no entitlement promise.',
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
     name: 'get_user',
     description: 'Look up a user by their username',
     inputSchema: {

@@ -141,6 +141,20 @@ export async function handleSearchTweets(
 
 // --- Tweet CRUD ---
 
+export async function handleGetMe(
+  _args: Record<string, unknown>
+): Promise<HandlerResult> {
+  const client = await getClient();
+  const me = await withRateLimit('get_me', () =>
+    client.v2.me({ 'user.fields': ['id', 'name', 'username'] })
+  );
+  return jsonResult({ ...me.data, publisher_contract: {
+    version: 1, length_policy: 'x-api-enforced',
+    requested_readback_fields: ['entities', 'note_tweet'],
+    expected_author_parameter: 'expected_author_id',
+  } });
+}
+
 export async function handleGetTweet(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
