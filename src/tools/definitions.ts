@@ -60,6 +60,10 @@ export const TOOL_DEFINITIONS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {
+        expected_author_id: {
+          type: 'string', pattern: '^[0-9]{1,20}$',
+          description: 'Optional exact authenticated author ID guard, freshly checked on the same captured client before creating.',
+        },
         text: {
           type: 'string',
           description: 'The text content of the post (max 280 characters, or 25,000 for X Premium accounts)',

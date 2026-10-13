@@ -186,6 +186,11 @@ export async function handleCreateTweet(
   const videoPath = optionalString(args, 'video_path');
   const client = await getClient();
 
+  const expectedAuthor = args.expected_author_id === undefined ? undefined : requireTweetId(args, 'expected_author_id');
+  if (expectedAuthor !== undefined) {
+    const me = await withRateLimit('get_me', () => client.v2.me({ 'user.fields': ['id', 'name', 'username'] }));
+    if (me.data.id !== expectedAuthor) throw new McpError(ErrorCode.InvalidRequest, 'Authenticated author ID mismatch');
+  }
   const mediaId = await resolveMediaId(imagePath, videoPath);
 
   const tweet = await withRateLimit('create_tweet', () =>
