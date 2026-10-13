@@ -141,6 +141,20 @@ export async function handleSearchTweets(
 
 // --- Tweet CRUD ---
 
+export async function handleGetMe(
+  _args: Record<string, unknown>
+): Promise<HandlerResult> {
+  const client = await getClient();
+  const me = await withRateLimit('get_me', () =>
+    client.v2.me({ 'user.fields': ['id', 'name', 'username'] })
+  );
+  return jsonResult({ ...me.data, publisher_contract: {
+    version: 1, length_policy: 'x-api-enforced',
+    requested_readback_fields: ['entities', 'note_tweet'],
+    expected_author_parameter: 'expected_author_id',
+  } });
+}
+
 export async function handleGetTweet(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
@@ -155,7 +169,9 @@ export async function handleGetTweet(
         'public_metrics',
         'referenced_tweets',
         'conversation_id',
-              ],
+        'entities',
+        'note_tweet',
+      ],
       expansions: ['author_id', 'referenced_tweets.id'],
       'user.fields': ['name', 'username'],
     })
@@ -172,6 +188,11 @@ export async function handleCreateTweet(
   const videoPath = optionalString(args, 'video_path');
   const client = await getClient();
 
+  const expectedAuthor = args.expected_author_id === undefined ? undefined : requireTweetId(args, 'expected_author_id');
+  if (expectedAuthor !== undefined) {
+    const me = await withRateLimit('get_me', () => client.v2.me({ 'user.fields': ['id', 'name', 'username'] }));
+    if (me.data.id !== expectedAuthor) throw new McpError(ErrorCode.InvalidRequest, 'Authenticated author ID mismatch');
+  }
   const mediaId = await resolveMediaId(imagePath, videoPath);
 
   const tweet = await withRateLimit('create_tweet', () =>
