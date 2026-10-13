@@ -1,6 +1,6 @@
 # X MCP Server
 
-A Model Context Protocol (MCP) server for X (Twitter) integration. Provides 26 tools for reading timelines, posting, searching, engagement (likes, retweets, bookmarks), user lookup, follower export, mentions, likes, articles, and lists. Designed for use with Claude desktop and other MCP-compatible clients.
+A Model Context Protocol (MCP) server for X (Twitter) integration. Provides 27 tools for reading timelines, posting, searching, engagement (likes, retweets, bookmarks), authenticated identity, user lookup, follower export, mentions, likes, articles, and lists. Designed for use with Claude desktop and other MCP-compatible clients.
 
 This fork is maintained at [mobalab/x-mcp-server](https://github.com/mobalab/x-mcp-server) and published as `@mobalab/x-mcp-server`. The original project is [DataWhisker/x-mcp-server](https://github.com/DataWhisker/x-mcp-server).
 
@@ -12,6 +12,9 @@ This fork is maintained at [mobalab/x-mcp-server](https://github.com/mobalab/x-m
 - **Post Management** - Create, reply, quote, delete posts with optional media
 - **Engagement** - Like/unlike, retweet/undo, bookmark/unbookmark
 - **User Data** - Mentions, liked posts, followers, following, blocks, mutes, owned lists, followed lists, and list memberships
+- **Authenticated Identity** - Read the account selected by the server credentials with `get_me`
+- **Guarded Creation** - Optionally require an exact authenticated author ID before creating a post
+- **Full Post Read-back** - Request URL entities and long-form text for verification
 - **User Lookup** - Get user profiles and their recent posts
 - **Media Upload** - Images (PNG, JPEG, GIF, WEBP) and videos (MP4, MOV, AVI, WEBM, M4V) via v2 upload API
 - **Dual Auth** - OAuth 1.0a for post operations, OAuth 2.0 for media upload (v1.1 upload was sunset June 2025)
@@ -149,7 +152,7 @@ X API client. Set:
 | `XQUIK_API_KEY` | Xquik API key |
 | `XQUIK_API_BASE_URL` | Optional base URL, defaults to `https://xquik.com/api/v1` |
 
-## Available Tools (26)
+## Available Tools (27)
 
 ### Timeline & Search
 
@@ -162,8 +165,8 @@ X API client. Set:
 
 | Tool | Description | Key Parameters |
 |------|-------------|---------------|
-| `get_tweet` | Look up a post by ID | `tweet_id` |
-| `create_tweet` | Create a post with optional media | `text`, `image_path?`, `video_path?` |
+| `get_tweet` | Look up a post, requesting URL entities and long-form text | `tweet_id` |
+| `create_tweet` | Create a post with optional media and an author guard | `text`, `expected_author_id?`, `image_path?`, `video_path?` |
 | `reply_to_tweet` | Reply to a post with optional media | `tweet_id`, `text`, `image_path?`, `video_path?` |
 | `quote_tweet` | Quote a post with commentary | `tweet_id`, `text` |
 | `delete_tweet` | Delete your post | `tweet_id` |
@@ -184,6 +187,7 @@ X API client. Set:
 
 | Tool | Description | Key Parameters |
 |------|-------------|---------------|
+| `get_me` | Read fresh authenticated identity and publisher policy | None |
 | `get_user` | Look up user by username | `username` |
 | `get_user_tweets` | Get a user's recent posts | `username`, `limit` |
 | `get_user_mentions` | Get posts mentioning a user | `username`, `limit` |
@@ -201,6 +205,98 @@ X API client. Set:
 | Tool | Description | Key Parameters |
 |------|-------------|---------------|
 | `get_article` | Fetch the full body content of an X Article post | `tweet_id` |
+
+## Authenticated Identity and Guarded Posting
+
+### `get_me` versus `get_user`
+
+`get_me` makes a fresh user-context API request using the client selected by the
+server credentials. It returns that account's `id`, `name`, and `username`.
+`get_user(username)` only looks up a requested public account; it does not identify
+which account a subsequent create request will use. Use `get_me` when a workflow
+must confirm the intended author before posting.
+
+The response also includes this versioned server policy:
+
+```json
+{
+  "publisher_contract": {
+    "version": 1,
+    "length_policy": "x-api-enforced",
+    "requested_readback_fields": ["entities", "note_tweet"],
+    "expected_author_parameter": "expected_author_id"
+  }
+}
+```
+
+This policy describes the server's guard and requested fields. It is not an API
+entitlement check or a guarantee that optional fields will appear in every post.
+The identity request requires user-context authentication; an authentication or
+permission failure is returned as an error, not a fabricated identity.
+
+### Optional `expected_author_id` on `create_tweet`
+
+For a targeted posting workflow:
+
+1. Call `get_me` and compare its username and ID with the intended account.
+2. Obtain any human approval required by your application for the exact text.
+3. Pass the returned ID unchanged as `expected_author_id` when creating the post.
+
+For example, this MCP call uses an **illustrative ID and text**, not a live result:
+
+```json
+{
+  "name": "create_tweet",
+  "arguments": {
+    "text": "An explicitly approved post.",
+    "expected_author_id": "123456789"
+  }
+}
+```
+
+The ID must be a string containing 1–20 decimal digits. When supplied, the handler
+captures one X client, reads its authenticated identity freshly, and compares the
+ID before uploading media or creating the post. A mismatch or identity error
+prevents creation. The same captured client is used for the subsequent create;
+there is no second client selection between the identity check and that write.
+
+The parameter is optional for backwards compatibility. Omitting it retains the
+existing behavior without this author check. It applies to `create_tweet`, not
+reply or quote tools. The server does not enforce your application's human
+approval, deduplication, or publication-authorization policy; callers must do so.
+
+## Long Posts and Read-back Verification
+
+The MCP schemas for create, reply, and quote text permit up to **25,000 characters**.
+This is the server's input-schema limit, not proof that the authenticated account,
+application, or API access can publish that length. X applies its own eligibility
+and length rules. Premium status alone is not an account-specific API entitlement
+check. The server does not shorten or split text to work around a rejection.
+
+`get_tweet` requests `entities` and `note_tweet` in addition to its existing fields
+and returns the API response's `data` object in the existing MCP JSON-text envelope.
+When the API supplies genuine long-form content, use `note_tweet.text` and its own
+`note_tweet.entities`; otherwise ordinary posts use `text` and `entities`. Optional
+entities may be absent, particularly when a post has no URLs. An X Article fetched
+with `get_article` is a separate feature, not a substitute for long-post read-back.
+
+Before relying on long-form verification in a deployment, perform a read-only
+lookup of an existing long post. Confirm the endpoint accepts the requested field
+and returns genuine full text and URL entities where URLs exist. The locked SDK
+uses `note_tweet`; some API documentation uses `note_post`. Do not silently guess
+an alias or accept a truncated preview when the deployed API response differs.
+
+After creating an approved post, retain its returned ID and look up that exact ID.
+Check the author ID and full text, including paragraph breaks. X may replace URLs
+with `t.co` links: use the matching returned URL entities and their `expanded_url`
+values rather than guessing expansions. Missing full text, inconsistent entity
+offsets, or an author/content mismatch means verification has not succeeded.
+
+A timeout or other ambiguous create error does not prove that nothing was posted.
+Do not automatically issue another create request; reconcile using the returned
+ID if available, or investigate the account's posts. The server's rate-limit
+wrapper invokes a request once, but that is not an end-to-end exactly-once
+publication guarantee across clients and gateways.
 
 ## Media Support
 
@@ -282,7 +378,7 @@ src/
   media.ts              # v2 media upload (simple + chunked)
   rate-limit.ts         # Per-endpoint rate limiting
   tools/
-    definitions.ts      # All 16 tool schemas
+    definitions.ts      # Tool schemas
     handlers.ts         # Tool handler implementations
 ```
 
