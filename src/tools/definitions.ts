@@ -1,6 +1,7 @@
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import {
   PAGINATION_TOKEN_PROPERTY,
+  TIMELINE_MIN_LIMIT,
   USER_DATA_TOOL_DEFINITIONS,
 } from './user-data-definitions.js';
 
@@ -278,8 +279,8 @@ export const TOOL_DEFINITIONS: Tool[] = [
         },
         limit: {
           type: 'number',
-          description: 'Number of posts to retrieve (1-100, default 10)',
-          minimum: 1,
+          description: `Number of posts to retrieve (${TIMELINE_MIN_LIMIT}-100, default 10)`,
+          minimum: TIMELINE_MIN_LIMIT,
           maximum: 100,
         },
         pagination_token: PAGINATION_TOKEN_PROPERTY,

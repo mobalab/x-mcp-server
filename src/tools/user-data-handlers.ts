@@ -2,6 +2,7 @@ import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import type { TListV2Field, TweetV2, UserV2 } from 'twitter-api-v2';
 import { getAuthenticatedUserId, getClient } from '../client.js';
 import { withRateLimit } from '../rate-limit.js';
+import { TIMELINE_MIN_LIMIT } from './user-data-definitions.js';
 
 type HandlerResult = {
   readonly content: ReadonlyArray<{ readonly type: 'text'; readonly text: string }>;
@@ -69,9 +70,13 @@ function optionalNumber(args: Record<string, unknown>, fallback: number): number
   return value;
 }
 
-function normalizedLimit(args: Record<string, unknown>, fallback: number): number {
+function normalizedLimit(
+  args: Record<string, unknown>,
+  fallback: number,
+  minLimit = 1
+): number {
   const limit = optionalNumber(args, fallback);
-  return Math.max(1, Math.min(limit, 100));
+  return Math.max(minLimit, Math.min(limit, 100));
 }
 
 function optionalPaginationToken(args: Record<string, unknown>): string | undefined {
@@ -86,10 +91,14 @@ function optionalPaginationToken(args: Record<string, unknown>): string | undefi
   return value;
 }
 
-function pageParams(args: Record<string, unknown>, fallback: number): PageParams {
+function pageParams(
+  args: Record<string, unknown>,
+  fallback: number,
+  minLimit = 1
+): PageParams {
   const paginationToken = optionalPaginationToken(args);
   return {
-    max_results: normalizedLimit(args, fallback),
+    max_results: normalizedLimit(args, fallback, minLimit),
     ...(paginationToken ? { pagination_token: paginationToken } : {}),
   };
 }
@@ -110,10 +119,11 @@ async function loadUserScopedResult(
   args: Record<string, unknown>,
   rateLimitKey: string,
   defaultLimit: number,
-  loader: UserScopedLoader
+  loader: UserScopedLoader,
+  minLimit = 1
 ): Promise<HandlerResult> {
   const username = requireUsername(args);
-  const page = pageParams(args, defaultLimit);
+  const page = pageParams(args, defaultLimit, minLimit);
   const client = await getClient();
   const userId = await resolveUserIdByUsername(client, username);
   const result = await withRateLimit(rateLimitKey, () => loader(client, userId, page));
@@ -152,37 +162,52 @@ export async function handleGetUser(
 export async function handleGetUserTweets(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'user_tweets', 10, (client, userId, page) =>
-    client.v2.userTimeline(userId, {
-      ...page,
-      'tweet.fields': ['created_at', 'public_metrics', 'referenced_tweets'],
-    })
+  return loadUserScopedResult(
+    args,
+    'user_tweets',
+    10,
+    (client, userId, page) =>
+      client.v2.userTimeline(userId, {
+        ...page,
+        'tweet.fields': ['created_at', 'public_metrics', 'referenced_tweets'],
+      }),
+    TIMELINE_MIN_LIMIT
   );
 }
 
 export async function handleGetUserMentions(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'user_mentions', 10, (client, userId, page) =>
-    client.v2.userMentionTimeline(userId, {
-      ...page,
-      'tweet.fields': DEFAULT_TWEET_FIELDS,
-      expansions: ['author_id'],
-      'user.fields': ['name', 'username'],
-    })
+  return loadUserScopedResult(
+    args,
+    'user_mentions',
+    10,
+    (client, userId, page) =>
+      client.v2.userMentionTimeline(userId, {
+        ...page,
+        'tweet.fields': DEFAULT_TWEET_FIELDS,
+        expansions: ['author_id'],
+        'user.fields': ['name', 'username'],
+      }),
+    TIMELINE_MIN_LIMIT
   );
 }
 
 export async function handleGetUserLikedTweets(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'user_liked_tweets', 10, (client, userId, page) =>
-    client.v2.userLikedTweets(userId, {
-      ...page,
-      'tweet.fields': DEFAULT_TWEET_FIELDS,
-      expansions: ['author_id'],
-      'user.fields': ['name', 'username'],
-    })
+  return loadUserScopedResult(
+    args,
+    'user_liked_tweets',
+    10,
+    (client, userId, page) =>
+      client.v2.userLikedTweets(userId, {
+        ...page,
+        'tweet.fields': DEFAULT_TWEET_FIELDS,
+        expansions: ['author_id'],
+        'user.fields': ['name', 'username'],
+      }),
+    TIMELINE_MIN_LIMIT
   );
 }
 
