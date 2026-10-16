@@ -12,8 +12,12 @@ type DataResult = { readonly data: unknown };
 type UserScopedLoader = (
   client: Client,
   userId: string,
-  limit: number
+  page: PageParams
 ) => Promise<DataResult>;
+type PageParams = {
+  readonly max_results: number;
+  readonly pagination_token?: string;
+};
 
 const USERNAME_RE = /^[A-Za-z0-9_]{1,15}$/;
 const DEFAULT_TWEET_FIELDS: Array<keyof TweetV2> = [
@@ -70,6 +74,26 @@ function normalizedLimit(args: Record<string, unknown>, fallback: number): numbe
   return Math.max(1, Math.min(limit, 100));
 }
 
+function optionalPaginationToken(args: Record<string, unknown>): string | undefined {
+  const value = args.pagination_token;
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new McpError(
+      ErrorCode.InvalidRequest,
+      "Invalid parameter: 'pagination_token' (expected non-empty string)"
+    );
+  }
+  return value;
+}
+
+function pageParams(args: Record<string, unknown>, fallback: number): PageParams {
+  const paginationToken = optionalPaginationToken(args);
+  return {
+    max_results: normalizedLimit(args, fallback),
+    ...(paginationToken ? { pagination_token: paginationToken } : {}),
+  };
+}
+
 async function resolveUserIdByUsername(client: Client, username: string): Promise<string> {
   const user = await withRateLimit('get_user', () =>
     client.v2.userByUsername(username)
@@ -89,10 +113,10 @@ async function loadUserScopedResult(
   loader: UserScopedLoader
 ): Promise<HandlerResult> {
   const username = requireUsername(args);
-  const limit = normalizedLimit(args, defaultLimit);
+  const page = pageParams(args, defaultLimit);
   const client = await getClient();
   const userId = await resolveUserIdByUsername(client, username);
-  const result = await withRateLimit(rateLimitKey, () => loader(client, userId, limit));
+  const result = await withRateLimit(rateLimitKey, () => loader(client, userId, page));
 
   return jsonResult(result.data);
 }
@@ -102,10 +126,10 @@ async function loadAuthenticatedResult(
   rateLimitKey: string,
   loader: UserScopedLoader
 ): Promise<HandlerResult> {
-  const limit = normalizedLimit(args, 20);
+  const page = pageParams(args, 20);
   const client = await getClient();
   const userId = await getAuthenticatedUserId();
-  const result = await withRateLimit(rateLimitKey, () => loader(client, userId, limit));
+  const result = await withRateLimit(rateLimitKey, () => loader(client, userId, page));
 
   return jsonResult(result.data);
 }
@@ -128,9 +152,9 @@ export async function handleGetUser(
 export async function handleGetUserTweets(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'user_tweets', 10, (client, userId, limit) =>
+  return loadUserScopedResult(args, 'user_tweets', 10, (client, userId, page) =>
     client.v2.userTimeline(userId, {
-      max_results: limit,
+      ...page,
       'tweet.fields': ['created_at', 'public_metrics', 'referenced_tweets'],
     })
   );
@@ -139,9 +163,9 @@ export async function handleGetUserTweets(
 export async function handleGetUserMentions(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'user_mentions', 10, (client, userId, limit) =>
+  return loadUserScopedResult(args, 'user_mentions', 10, (client, userId, page) =>
     client.v2.userMentionTimeline(userId, {
-      max_results: limit,
+      ...page,
       'tweet.fields': DEFAULT_TWEET_FIELDS,
       expansions: ['author_id'],
       'user.fields': ['name', 'username'],
@@ -152,9 +176,9 @@ export async function handleGetUserMentions(
 export async function handleGetUserLikedTweets(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'user_liked_tweets', 10, (client, userId, limit) =>
+  return loadUserScopedResult(args, 'user_liked_tweets', 10, (client, userId, page) =>
     client.v2.userLikedTweets(userId, {
-      max_results: limit,
+      ...page,
       'tweet.fields': DEFAULT_TWEET_FIELDS,
       expansions: ['author_id'],
       'user.fields': ['name', 'username'],
@@ -165,9 +189,9 @@ export async function handleGetUserLikedTweets(
 export async function handleGetUserFollowers(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'user_followers', 20, (client, userId, limit) =>
+  return loadUserScopedResult(args, 'user_followers', 20, (client, userId, page) =>
     client.v2.followers(userId, {
-      max_results: limit,
+      ...page,
       'user.fields': DEFAULT_USER_FIELDS,
     })
   );
@@ -176,9 +200,9 @@ export async function handleGetUserFollowers(
 export async function handleGetUserFollowing(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'user_following', 20, (client, userId, limit) =>
+  return loadUserScopedResult(args, 'user_following', 20, (client, userId, page) =>
     client.v2.following(userId, {
-      max_results: limit,
+      ...page,
       'user.fields': DEFAULT_USER_FIELDS,
     })
   );
@@ -187,9 +211,9 @@ export async function handleGetUserFollowing(
 export async function handleGetBlockingUsers(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadAuthenticatedResult(args, 'blocking_users', (client, userId, limit) =>
+  return loadAuthenticatedResult(args, 'blocking_users', (client, userId, page) =>
     client.v2.userBlockingUsers(userId, {
-      max_results: limit,
+      ...page,
       'user.fields': DEFAULT_USER_FIELDS,
     })
   );
@@ -198,9 +222,9 @@ export async function handleGetBlockingUsers(
 export async function handleGetMutingUsers(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadAuthenticatedResult(args, 'muting_users', (client, userId, limit) =>
+  return loadAuthenticatedResult(args, 'muting_users', (client, userId, page) =>
     client.v2.userMutingUsers(userId, {
-      max_results: limit,
+      ...page,
       'user.fields': DEFAULT_USER_FIELDS,
     })
   );
@@ -209,9 +233,9 @@ export async function handleGetMutingUsers(
 export async function handleGetOwnedLists(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'owned_lists', 20, (client, userId, limit) =>
+  return loadUserScopedResult(args, 'owned_lists', 20, (client, userId, page) =>
     client.v2.listsOwned(userId, {
-      max_results: limit,
+      ...page,
       'list.fields': DEFAULT_LIST_FIELDS,
     })
   );
@@ -220,9 +244,9 @@ export async function handleGetOwnedLists(
 export async function handleGetFollowedLists(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'followed_lists', 20, (client, userId, limit) =>
+  return loadUserScopedResult(args, 'followed_lists', 20, (client, userId, page) =>
     client.v2.listFollowed(userId, {
-      max_results: limit,
+      ...page,
       'list.fields': DEFAULT_LIST_FIELDS,
     })
   );
@@ -231,9 +255,9 @@ export async function handleGetFollowedLists(
 export async function handleGetListMemberships(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
-  return loadUserScopedResult(args, 'list_memberships', 20, (client, userId, limit) =>
+  return loadUserScopedResult(args, 'list_memberships', 20, (client, userId, page) =>
     client.v2.listMemberships(userId, {
-      max_results: limit,
+      ...page,
       'list.fields': DEFAULT_LIST_FIELDS,
     })
   );

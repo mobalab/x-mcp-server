@@ -1,5 +1,11 @@
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 
+export const PAGINATION_TOKEN_PROPERTY = {
+  type: 'string',
+  description:
+    "Token from the previous response's meta.next_token, to fetch the next page. Omit for the first page.",
+} as const;
+
 function usernameLimitTool(
   name: string,
   description: string,
@@ -22,6 +28,7 @@ function usernameLimitTool(
           minimum: 1,
           maximum: 100,
         },
+        pagination_token: PAGINATION_TOKEN_PROPERTY,
       },
       required: ['username'],
     },
@@ -45,6 +52,7 @@ function limitOnlyTool(
           minimum: 1,
           maximum: 100,
         },
+        pagination_token: PAGINATION_TOKEN_PROPERTY,
       },
     },
   };

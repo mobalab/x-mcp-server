@@ -1,5 +1,8 @@
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
-import { USER_DATA_TOOL_DEFINITIONS } from './user-data-definitions.js';
+import {
+  PAGINATION_TOKEN_PROPERTY,
+  USER_DATA_TOOL_DEFINITIONS,
+} from './user-data-definitions.js';
 
 export const TOOL_DEFINITIONS: Tool[] = [
   // --- Timeline & Search ---
@@ -279,6 +282,7 @@ export const TOOL_DEFINITIONS: Tool[] = [
           minimum: 1,
           maximum: 100,
         },
+        pagination_token: PAGINATION_TOKEN_PROPERTY,
       },
       required: ['username'],
     },
