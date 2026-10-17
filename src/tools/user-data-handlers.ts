@@ -2,7 +2,12 @@ import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import type { TListV2Field, TweetV2, UserV2 } from 'twitter-api-v2';
 import { getAuthenticatedUserId, getClient } from '../client.js';
 import { withRateLimit } from '../rate-limit.js';
-import { TIMELINE_MIN_LIMIT } from './user-data-definitions.js';
+import {
+  DEFAULT_LIMIT_RANGE,
+  TIMELINE_LIMIT_RANGE,
+  USER_LIST_LIMIT_RANGE,
+  type LimitRange,
+} from './user-data-definitions.js';
 
 type HandlerResult = {
   readonly content: ReadonlyArray<{ readonly type: 'text'; readonly text: string }>;
@@ -73,10 +78,10 @@ function optionalNumber(args: Record<string, unknown>, fallback: number): number
 function normalizedLimit(
   args: Record<string, unknown>,
   fallback: number,
-  minLimit = 1
+  range: LimitRange
 ): number {
   const limit = optionalNumber(args, fallback);
-  return Math.max(minLimit, Math.min(limit, 100));
+  return Math.max(range.min, Math.min(limit, range.max));
 }
 
 function optionalPaginationToken(args: Record<string, unknown>): string | undefined {
@@ -94,11 +99,11 @@ function optionalPaginationToken(args: Record<string, unknown>): string | undefi
 function pageParams(
   args: Record<string, unknown>,
   fallback: number,
-  minLimit = 1
+  range: LimitRange
 ): PageParams {
   const paginationToken = optionalPaginationToken(args);
   return {
-    max_results: normalizedLimit(args, fallback, minLimit),
+    max_results: normalizedLimit(args, fallback, range),
     ...(paginationToken ? { pagination_token: paginationToken } : {}),
   };
 }
@@ -120,10 +125,10 @@ async function loadUserScopedResult(
   rateLimitKey: string,
   defaultLimit: number,
   loader: UserScopedLoader,
-  minLimit = 1
+  range: LimitRange = DEFAULT_LIMIT_RANGE
 ): Promise<HandlerResult> {
   const username = requireUsername(args);
-  const page = pageParams(args, defaultLimit, minLimit);
+  const page = pageParams(args, defaultLimit, range);
   const client = await getClient();
   const userId = await resolveUserIdByUsername(client, username);
   const result = await withRateLimit(rateLimitKey, () => loader(client, userId, page));
@@ -134,9 +139,10 @@ async function loadUserScopedResult(
 async function loadAuthenticatedResult(
   args: Record<string, unknown>,
   rateLimitKey: string,
-  loader: UserScopedLoader
+  loader: UserScopedLoader,
+  range: LimitRange = DEFAULT_LIMIT_RANGE
 ): Promise<HandlerResult> {
-  const page = pageParams(args, 20);
+  const page = pageParams(args, 20, range);
   const client = await getClient();
   const userId = await getAuthenticatedUserId();
   const result = await withRateLimit(rateLimitKey, () => loader(client, userId, page));
@@ -171,7 +177,7 @@ export async function handleGetUserTweets(
         ...page,
         'tweet.fields': ['created_at', 'public_metrics', 'referenced_tweets'],
       }),
-    TIMELINE_MIN_LIMIT
+    TIMELINE_LIMIT_RANGE
   );
 }
 
@@ -189,7 +195,7 @@ export async function handleGetUserMentions(
         expansions: ['author_id'],
         'user.fields': ['name', 'username'],
       }),
-    TIMELINE_MIN_LIMIT
+    TIMELINE_LIMIT_RANGE
   );
 }
 
@@ -207,7 +213,7 @@ export async function handleGetUserLikedTweets(
         expansions: ['author_id'],
         'user.fields': ['name', 'username'],
       }),
-    TIMELINE_MIN_LIMIT
+    TIMELINE_LIMIT_RANGE
   );
 }
 
@@ -222,7 +228,8 @@ export async function handleGetUserFollowers(
         ...page,
         'user.fields': DEFAULT_USER_FIELDS,
       })
-      .then((response) => ({ data: response }))
+      .then((response) => ({ data: response })),
+    USER_LIST_LIMIT_RANGE
   );
 }
 
@@ -237,7 +244,8 @@ export async function handleGetUserFollowing(
         ...page,
         'user.fields': DEFAULT_USER_FIELDS,
       })
-      .then((response) => ({ data: response }))
+      .then((response) => ({ data: response })),
+    USER_LIST_LIMIT_RANGE
   );
 }
 
@@ -248,7 +256,8 @@ export async function handleGetBlockingUsers(
     client.v2.userBlockingUsers(userId, {
       ...page,
       'user.fields': DEFAULT_USER_FIELDS,
-    })
+    }),
+    USER_LIST_LIMIT_RANGE
   );
 }
 
@@ -259,7 +268,8 @@ export async function handleGetMutingUsers(
     client.v2.userMutingUsers(userId, {
       ...page,
       'user.fields': DEFAULT_USER_FIELDS,
-    })
+    }),
+    USER_LIST_LIMIT_RANGE
   );
 }
 
