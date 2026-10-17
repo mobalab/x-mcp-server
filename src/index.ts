@@ -79,7 +79,7 @@ class XMcpServer {
 
   constructor() {
     this.server = new Server(
-      { name: 'x-mcp-server', version: '2.0.3' },
+      { name: 'x-mcp-server', version: '2.1.0' },
       { capabilities: { tools: {} } }
     );
 
@@ -119,7 +119,7 @@ class XMcpServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('X MCP server v2.0.3 running on stdio');
+    console.error('X MCP server v2.1.0 running on stdio');
   }
 }
 
