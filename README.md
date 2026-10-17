@@ -189,16 +189,19 @@ X API client. Set:
 |------|-------------|---------------|
 | `get_me` | Read fresh authenticated identity and publisher policy | None |
 | `get_user` | Look up user by username | `username` |
-| `get_user_tweets` | Get a user's recent posts | `username`, `limit` |
-| `get_user_mentions` | Get posts mentioning a user | `username`, `limit` |
-| `get_user_liked_tweets` | Get a user's liked posts | `username`, `limit` |
-| `get_user_followers` | Get a user's followers | `username`, `limit` |
-| `get_user_following` | Get accounts a user follows | `username`, `limit` |
-| `get_blocking_users` | Get users blocked by the authenticated account | `limit` |
-| `get_muting_users` | Get users muted by the authenticated account | `limit` |
-| `get_owned_lists` | Get lists owned by a user | `username`, `limit` |
-| `get_followed_lists` | Get lists followed by a user | `username`, `limit` |
-| `get_list_memberships` | Get lists a user belongs to | `username`, `limit` |
+| `get_user_tweets` | Get a user's recent posts | `username`, `limit`, `pagination_token` |
+| `get_user_mentions` | Get posts mentioning a user | `username`, `limit`, `pagination_token` |
+| `get_user_liked_tweets` | Get a user's liked posts | `username`, `limit`, `pagination_token` |
+| `get_user_followers` | Get a user's followers | `username`, `limit`, `pagination_token` |
+| `get_user_following` | Get accounts a user follows | `username`, `limit`, `pagination_token` |
+| `get_blocking_users` | Get users blocked by the authenticated account | `limit`, `pagination_token` |
+| `get_muting_users` | Get users muted by the authenticated account | `limit`, `pagination_token` |
+| `get_owned_lists` | Get lists owned by a user | `username`, `limit`, `pagination_token` |
+| `get_followed_lists` | Get lists followed by a user | `username`, `limit`, `pagination_token` |
+| `get_list_memberships` | Get lists a user belongs to | `username`, `limit`, `pagination_token` |
+
+Tools with a `pagination_token` parameter are paginated. Each response's `meta.next_token` (absent on
+the last page) can be passed back as `pagination_token` to fetch the next page.
 
 ### Articles
 

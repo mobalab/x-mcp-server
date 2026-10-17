@@ -1,10 +1,20 @@
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 
+// X API rejects max_results < 5 for posts, mentions and liked posts.
+export const TIMELINE_MIN_LIMIT = 5;
+
+export const PAGINATION_TOKEN_PROPERTY = {
+  type: 'string',
+  description:
+    "Token from the previous response's meta.next_token, to fetch the next page. Omit for the first page.",
+} as const;
+
 function usernameLimitTool(
   name: string,
   description: string,
   limitDescription: string,
-  defaultLimit: number
+  defaultLimit: number,
+  minLimit = 1
 ): Tool {
   return {
     name,
@@ -18,10 +28,11 @@ function usernameLimitTool(
         },
         limit: {
           type: 'number',
-          description: `${limitDescription} (1-100, default ${defaultLimit})`,
-          minimum: 1,
+          description: `${limitDescription} (${minLimit}-100, default ${defaultLimit})`,
+          minimum: minLimit,
           maximum: 100,
         },
+        pagination_token: PAGINATION_TOKEN_PROPERTY,
       },
       required: ['username'],
     },
@@ -45,6 +56,7 @@ function limitOnlyTool(
           minimum: 1,
           maximum: 100,
         },
+        pagination_token: PAGINATION_TOKEN_PROPERTY,
       },
     },
   };
@@ -55,13 +67,15 @@ export const USER_DATA_TOOL_DEFINITIONS: Tool[] = [
     'get_user_mentions',
     'Get recent posts mentioning a user by username',
     'Number of mentions to retrieve',
-    10
+    10,
+    TIMELINE_MIN_LIMIT
   ),
   usernameLimitTool(
     'get_user_liked_tweets',
     "Get a user's recently liked posts by username",
     'Number of liked posts to retrieve',
-    10
+    10,
+    TIMELINE_MIN_LIMIT
   ),
   usernameLimitTool(
     'get_user_followers',
