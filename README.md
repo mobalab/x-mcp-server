@@ -324,7 +324,20 @@ npm ci           # Install locked dependencies and build
 npm run build    # Compile TypeScript
 npm run dev      # Watch mode
 npm start        # Run the server
+npm test         # Build, then run the offline test suite
 ```
+
+Tests live in `test/*.test.mjs` and use Node's built-in test runner, so no extra
+test framework is needed. They run against the compiled `build/` output with a
+fake X client: no credentials are required and no requests are sent to X.
+To run a single file:
+
+```bash
+node --experimental-test-module-mocks --test test/pagination.test.mjs
+```
+
+Run `npm run build` first if you changed `src/`. Node prints an "experimental"
+warning for module mocking; it is harmless.
 
 ## Publishing to npm (maintainers)
 
@@ -383,6 +396,7 @@ src/
   tools/
     definitions.ts      # Tool schemas
     handlers.ts         # Tool handler implementations
+test/                   # Offline tests (node:test), run with `npm test`
 ```
 
 ## Pairing with GetXAPI for Cheaper Read Operations (Optional)
