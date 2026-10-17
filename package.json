@@ -28,7 +28,8 @@
     "build": "tsc",
     "prepare": "npm run build",
     "start": "node build/index.js",
-    "dev": "tsc -w"
+    "dev": "tsc -w",
+    "test": "npm run build && node --experimental-test-module-mocks --test test/"
   },
   "keywords": [
     "mcp",
