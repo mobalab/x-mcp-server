@@ -360,17 +360,37 @@ After publishing, you can run it from any directory:
 npx -y @mobalab/x-mcp-server
 ```
 
-Each published version is unique and cannot be overwritten. For subsequent
-bug-fix releases, start with a clean, committed working tree and run:
+Each published version is unique and cannot be overwritten.
+
+### Releasing a new version
+
+Releases are prepared with the `bump-version` agent skill in
+[`.claude/skills/bump-version/`](.claude/skills/bump-version/SKILL.md). In
+[Claude Code](https://claude.com/claude-code), run:
+
+```
+/bump-version patch    # or minor, major, or an explicit x.y.z
+```
+
+The skill creates a `release/vX.Y.Z` branch from the default branch, updates the
+version in `package.json`, `package-lock.json` and `src/index.ts`, moves the
+`[Unreleased]` notes in [`CHANGELOG.md`](CHANGELOG.md) into a new version
+section, builds, and makes a single commit. It then offers to push and open a
+pull request.
+
+After the pull request is merged, tag the merge commit and publish:
 
 ```bash
-npm version patch
+git switch main && git pull
+git tag vX.Y.Z
+git push origin vX.Y.Z
 npm publish --access public
 ```
 
-`npm version patch` increments the version (for example, `2.0.0` to `2.0.1`),
-updates the lockfile, and creates a Git commit and tag. Update any MCP client
-configuration that pins a version when you want to use the new release.
+Avoid running a bare `npm version patch` by hand: it commits and tags before
+the version string in `src/index.ts` is updated, so the tag would point at a
+commit that reports the old version. Update any MCP client configuration that
+pins a version when you want to use the new release.
 
 ## Project Structure
 
