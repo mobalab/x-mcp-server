@@ -215,10 +215,14 @@ export async function handleGetUserFollowers(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
   return loadUserScopedResult(args, 'user_followers', 20, (client, userId, page) =>
-    client.v2.followers(userId, {
-      ...page,
-      'user.fields': DEFAULT_USER_FIELDS,
-    })
+    // Unlike the paginator-based calls, this returns the raw response, so wrap it
+    // to keep `meta.next_token` in the output.
+    client.v2
+      .followers(userId, {
+        ...page,
+        'user.fields': DEFAULT_USER_FIELDS,
+      })
+      .then((response) => ({ data: response }))
   );
 }
 
@@ -226,10 +230,14 @@ export async function handleGetUserFollowing(
   args: Record<string, unknown>
 ): Promise<HandlerResult> {
   return loadUserScopedResult(args, 'user_following', 20, (client, userId, page) =>
-    client.v2.following(userId, {
-      ...page,
-      'user.fields': DEFAULT_USER_FIELDS,
-    })
+    // Unlike the paginator-based calls, this returns the raw response, so wrap it
+    // to keep `meta.next_token` in the output.
+    client.v2
+      .following(userId, {
+        ...page,
+        'user.fields': DEFAULT_USER_FIELDS,
+      })
+      .then((response) => ({ data: response }))
   );
 }
 
