@@ -7,6 +7,8 @@ disable-model-invocation: true
 
 # Bump version
 
+The release notes live in `CHANGELOG.md` (Keep a Changelog format) and are updated in the same commit.
+
 Version lives in four places that must agree in a single commit:
 
 - `package.json` `version`
@@ -29,9 +31,10 @@ Instead, bump without git actions, edit the source, then make one commit. Tag la
    ```
    This updates `package.json` and `package-lock.json`. Then rename the branch: `git branch -m release/v$NEW`.
 5. **Update source strings** in `src/index.ts` to `$NEW` (both the `version:` field and the startup log message). Use the Edit tool, then verify nothing stale remains: `grep -rn "<old version>" src package.json package-lock.json README.md` should return nothing relevant.
-6. **Verify.** `npm run build` must succeed. Run `git diff --stat`: expect only `package.json`, `package-lock.json`, `src/index.ts`.
-7. **Commit** all three files as one commit with message `Bump version to $NEW` (plus the Co-Authored-By line from the session's attribution rules). Do not tag yet.
-8. **Push and PR** only if the user wants: `git push -u origin release/v$NEW`, then `gh pr create` against `<default>`. Pushing is outward-facing, so ask first unless the user already said to.
+6. **Update `CHANGELOG.md`.** Collect changes since the last tag (`git log <last-tag>..HEAD --oneline --no-merges`, plus merged PR titles). Put them under the `## [Unreleased]` entries, then turn that into `## [$NEW] - <today's date, YYYY-MM-DD>` and leave a fresh empty `## [Unreleased]` above it. Group under `Added` / `Changed` / `Fixed` / `Removed` (and `Security` if relevant); write for users of the MCP server, not commit-message copy, and skip pure test/README/tooling churn. Update the compare links at the bottom: `[Unreleased]` → `compare/v$NEW...HEAD`, and add `[$NEW]: …/compare/v<old>...v$NEW`. Show the new section to the user for approval before committing.
+7. **Verify.** `npm run build` must succeed. Run `git diff --stat`: expect only `package.json`, `package-lock.json`, `src/index.ts`, `CHANGELOG.md`.
+8. **Commit** all four files as one commit with message `Bump version to $NEW` (plus the Co-Authored-By line from the session's attribution rules). Do not tag yet.
+9. **Push and PR** only if the user wants: `git push -u origin release/v$NEW`, then `gh pr create` against `<default>`. Pushing is outward-facing, so ask first unless the user already said to.
 
 ## After the PR is merged (tell the user; do each step only on their go-ahead)
 
